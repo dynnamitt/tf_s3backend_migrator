@@ -1,5 +1,5 @@
 import click
-from tree_sitter_utils import parsers
+from ts_utils import parsers
 from pathlib import Path
 
 @click.group()

@@ -16,7 +16,7 @@ class Parsers:
             self._init_langs()
         except OSError as e:
             print(e)
-            print("WARN: Failed to find libs w/ languages, will try to build ...")
+            print(f"WARN: Failed to find {OUT_LIB}, will try to build ...")
             self._build()
             self._init_langs()
 

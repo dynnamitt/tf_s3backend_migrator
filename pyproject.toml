@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "tf-s3backend-migration"
+name = "tf-s3backend-migrator"
 version = "0.1.0"
 description = ""
 authors = ["kjetil midtlie <kjetil.midtlie@gmail.com>"]
 readme = "README.md"
-packages = [{ include = "tf_s3backend_migration" }]
+packages = [{ include = "tf_s3backend_migrator" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
