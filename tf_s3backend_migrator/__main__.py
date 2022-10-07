@@ -13,9 +13,9 @@ def cli():
 @click.argument("file-path", 
                 type=click.Path(exists=True,resolve_path=True),
                 nargs=1)
-def hcl(parsers_dir,file_path):
+def hcl_tfvars(parsers_dir,file_path):
 
-    ps = parsers.Parsers(Path(parsers_dir))
+    ps = parsers.TSParsers(Path(parsers_dir))
     p = ps.get_parser("hcl")
 
     # open file
@@ -24,6 +24,18 @@ def hcl(parsers_dir,file_path):
 
 
     print(tree.root_node.sexp()) 
+    print("querying..")
+
+    query = ps.get_language("hcl").query("""
+    (attribute (identifier) @property)
+    (one_line_block (identifier) @type)
+    """)
+
+    captures = query.captures(tree.root_node)
+    for c in captures:
+        print("len",len(c))
+        print(c[0],c[1])
+
 
 if __name__ == '__main__':
     cli()

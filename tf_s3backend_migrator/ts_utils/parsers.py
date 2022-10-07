@@ -6,7 +6,7 @@ import sys
 OUT_LIB = 'build/my_langs.so'
 TS_PARSERDIR_PRE = 'tree-sitter-'
 
-class Parsers:
+class TSParsers:
 
     def __init__(self,top_path:Path):
         self._parser_dirs = [p for p in top_path.iterdir() 
@@ -30,7 +30,12 @@ class Parsers:
             print(e)
             sys.exit(1)
     
-    def get_parser(self,lang):
+    def get_parser(self,lang:str) -> Parser :
         p = Parser()
         p.set_language(self._langs.get(lang))
         return p
+    
+    def get_language(self,lang:str) -> Language:
+        return self._langs.get(lang)
+
+
