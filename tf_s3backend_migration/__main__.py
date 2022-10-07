@@ -1,5 +1,6 @@
 import click
 from tree_sitter_utils import parsers
+from pathlib import Path
 
 @click.group()
 def cli():
@@ -13,12 +14,15 @@ def cli():
                 type=click.Path(exists=True,resolve_path=True),
                 nargs=1)
 def hcl(parsers_dir,file_path):
-    p = parsers.init(parsers_dir)
+
+    ps = parsers.Parsers(Path(parsers_dir))
+    p = ps.get_parser("hcl")
 
     # open file
     with open(file_path,"rb") as f:
         tree = p.parse(f.read())
-    
+
+
     print(tree.root_node.sexp()) 
 
 if __name__ == '__main__':
