@@ -42,39 +42,24 @@ def hcl_tfvars(file_path):
         code_buf = f.read()
         tree = p.parse(code_buf)
 
-
     print(tree.root_node.sexp()) 
-    print("querying..")
+    print("-------------")
 
+    part_queries = [parsers.hcl_q["attr_expr_kv"](k) for k in ["role_arn","region","bucket","dynamodb_table"]]
 
-    qs = [parsers.hcl_q["attr_expr_kv"](k) for k in ["role_arn","region","bucket","dynamodb_table"]]
-
-    q1 = "\n".join(qs)
-
-
-    q2 = """
-    (
-    (attribute (identifier) @key_bucket
-        (expression (expr_term (template_expr (quoted_template) @q) )))
-    (#eq? @key_bucket "bucket" )
-    )
-    (
-    (attribute (identifier) @key_region)
-    (#eq? @key_region "region" )
-    )
-    (
-    (attribute (identifier) @key_role_arn)
-    (#eq? @key_role_arn "role_arn" )
-    )
-    """
+    q1 = "\n".join(part_queries)
     
     query = hcl.query(q1)
 
-    captures = query.captures(tree.root_node)
+    # clever zip_from_i*2
+    i_captures = iter(query.captures(tree.root_node))
+    cap_paired = zip(i_captures,i_captures)
     
-    for c in captures: # pair up (zip?)
+    for k,v in cap_paired: #
 
-        print(parsers.get_text(code_buf,c[0]))
+        k_ = parsers.get_text(code_buf,k[0])
+        v_ = parsers.get_text(code_buf,v[0])
+        print(k_,v_)
 
 
 if __name__ == '__main__':
