@@ -1,22 +1,41 @@
 import click
 from ts_utils import parsers
-from pathlib import Path
+import sys
+
+LANGS = ["make","hcl"]
+
+def die(s,code=1):
+    sys.stderr.write(str(s)+"\n")
+    sys.exit(code)
+
+def get_ts_parsers(dir=None): 
+    try:
+        return parsers.TSParsers(LANGS,dir)
+    except NotADirectoryError :
+        die(f"--> Git-clone the parsers {LANGS} & use the 'compile' command to build a library")
+    except Exception as e:
+        die(e)
+
 
 @click.group()
 def cli():
     pass
 
 @cli.command()
-@click.argument("parsers-dir", 
-                type=click.Path(exists=True,file_okay=False,resolve_path=True),
-                nargs=1)
+@click.argument("parsers-root-dir",
+              type=click.Path(exists=True,resolve_path=True),
+              nargs=1)
+def compile(parsers_root_dir):
+    get_ts_parsers(parsers_root_dir)
+    
+
+@cli.command()
 @click.argument("file-path", 
                 type=click.Path(exists=True,resolve_path=True),
                 nargs=1)
-def hcl_tfvars(parsers_dir,file_path):
+def hcl_tfvars(file_path):
 
-    ps = parsers.TSParsers(Path(parsers_dir))
-    p = ps.get_parser("hcl")
+    p,hcl = get_ts_parsers().get("hcl")
 
     # open file
     with open(file_path,"rb") as f:
@@ -26,7 +45,7 @@ def hcl_tfvars(parsers_dir,file_path):
     print(tree.root_node.sexp()) 
     print("querying..")
 
-    query = ps.get_language("hcl").query("""
+    query = hcl.query("""
     (attribute (identifier) @property)
     (one_line_block (identifier) @type)
     """)
