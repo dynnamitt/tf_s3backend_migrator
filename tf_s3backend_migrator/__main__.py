@@ -39,21 +39,42 @@ def hcl_tfvars(file_path):
 
     # open file
     with open(file_path,"rb") as f:
-        tree = p.parse(f.read())
+        code_buf = f.read()
+        tree = p.parse(code_buf)
 
 
     print(tree.root_node.sexp()) 
     print("querying..")
 
-    query = hcl.query("""
-    (attribute (identifier) @property)
-    (one_line_block (identifier) @type)
-    """)
+
+    qs = [parsers.hcl_q["attr_expr_kv"](k) for k in ["role_arn","region","bucket","dynamodb_table"]]
+
+    q1 = "\n".join(qs)
+
+
+    q2 = """
+    (
+    (attribute (identifier) @key_bucket
+        (expression (expr_term (template_expr (quoted_template) @q) )))
+    (#eq? @key_bucket "bucket" )
+    )
+    (
+    (attribute (identifier) @key_region)
+    (#eq? @key_region "region" )
+    )
+    (
+    (attribute (identifier) @key_role_arn)
+    (#eq? @key_role_arn "role_arn" )
+    )
+    """
+    
+    query = hcl.query(q1)
 
     captures = query.captures(tree.root_node)
-    for c in captures:
-        print("len",len(c))
-        print(c[0],c[1])
+    
+    for c in captures: # pair up (zip?)
+
+        print(parsers.get_text(code_buf,c[0]))
 
 
 if __name__ == '__main__':

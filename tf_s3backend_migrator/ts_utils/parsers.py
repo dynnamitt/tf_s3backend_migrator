@@ -6,6 +6,21 @@ import sys
 OUT_LIB = 'build/my_langs.so'
 TS_PARSERDIR_PRE = 'tree-sitter-'
 
+hcl_q = {
+
+    "attr_expr_kv" : lambda key: f"""
+    (
+        (attribute (identifier) @key
+            (expression (expr_term (template_expr (quoted_template) @val) )))
+        (#eq? @key "{key}" )
+    )
+    """
+}
+
+# https://stackoverflow.com/questions/63635500/how-to-get-the-values-from-nodes-in-tree-sitter
+def get_text(bytes,node):
+    return bytes[node.start_byte:node.end_byte].decode('utf8')
+
 
 class TSParsers:
 
