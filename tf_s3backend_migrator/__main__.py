@@ -1,4 +1,6 @@
-import cli
-cli.hcl_tfvars()
+from . import cli
+
+if __name__ == "__main__":
+    cli.cli_group()
 
 
