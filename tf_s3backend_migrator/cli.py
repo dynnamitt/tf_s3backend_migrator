@@ -39,7 +39,15 @@ def analyze(directory):
 @click.argument("file-path", 
                 type=click.Path(exists=True,resolve_path=True),
                 nargs=1)
-def hcl_tfvars(file_path):
+def hcl_backend(file_path):
+    q.parse_file(Path(file_path)).tf_backend()
+
+
+@cli_group.command()
+@click.argument("file-path", 
+                type=click.Path(exists=True,resolve_path=True),
+                nargs=1)
+def hcl_full_tree(file_path):
 
     hcl = ts.get_language("hcl")
     parser = ts.get_parser("hcl") 

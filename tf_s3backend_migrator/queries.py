@@ -17,7 +17,6 @@ class TSResult:
         return self.code[node.start_byte:node.end_byte].decode('utf8')
 
 
-
 class HCLQueries(TSResult):
 
     def attr_expr(self, key_name:Optional[str]=None):
@@ -36,6 +35,26 @@ class HCLQueries(TSResult):
         return [(self.node_text(k[0]), self.node_text(v[0])) 
                 for k,v in cap_paired]
 
+    def tf_backend(self, backend_type:str="s3"):
+        scm = f"""
+        (
+        (block (identifier) @block 
+            (body (block 
+                   (identifier) @sub_block 
+                   (string_literal 
+                    (quoted_template) @sub_name)
+                   )))
+        (#eq? @block "terraform")
+        (#eq? @sub_block "backend")
+        ; (#eq? @sub_name "{backend_type}")
+        )
+        """
+        query = self.lang.query(scm)
+        captures = query.captures(self.tree.root_node)
+        for c in captures:
+            print(c[0], c[1], self.node_text(c[0]))
+
+
 
 def parse_file(file_path:Path) -> TSResult:
     lang = "hcl" if file_path.suffix in [".tfvars",".tf"] else "make"
@@ -53,7 +72,7 @@ def parse_file(file_path:Path) -> TSResult:
         case "make":
             return TSResult(code_buf,tree,l,parser)
             # pass basically that
-        case default:
+        case _:
             raise AssertionError("That language is not supported here!")
 
 
