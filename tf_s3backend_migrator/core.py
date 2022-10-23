@@ -1,7 +1,7 @@
 from functools import lru_cache
 from . import psudo_workspaces as pw
 from . import queries as q
-from pprint import pprint
+from rich import print
 from pathlib import Path
 from typing import List,Dict
 import click
@@ -18,6 +18,7 @@ EXPECTED_VALS = {"bucket",
                  "role_arn"}
 
 TF_CODE_DIR = "tf-code"
+CS = ["cyan","blue","yellow","red","orange","magenta"]
 
 def main(root_dir:Path):
     """Select the type and handle it"""
@@ -26,9 +27,9 @@ def main(root_dir:Path):
         ws = pw.scan_tf_dir(root_dir,patt,excludes=[TF_CODE_DIR])
         ws_names = [w.name for w in ws] 
         if len(ws)>0 :
-            print(f"Project_dir is of type {patt}")
+            print(f"\n:bulb: Project_dir is of type '{patt}'\n")
             print(f"Psudo-workspaces located:")
-            [print(" - ",w) for w in ws_names]
+            [print(f" - [{CS[idx+1]}]{w}[/{CS[idx+1]}]") for idx,w in enumerate(ws_names)]
             handle_specifics(root_dir,init_glob,ws)
                 
 def handle_specifics(root_dir:Path,
@@ -36,17 +37,17 @@ def handle_specifics(root_dir:Path,
                      ws: List[pw.TFWannabeWorkSpace]):
 
     code_path = Path(root_dir,TF_CODE_DIR)
-    for w in ws:
+    for idx,w in enumerate(ws):
         w.append_init(init_glob)
         print()
-        print(f"====== Psudo-TF-Workspace: {w.name} ======")
+        print(f"====== Psudo-TF-Workspace: [{CS[idx+1]}]{w.name}[/{CS[idx+1]}] :computer:")
         print()
         init_vals = q.parse_file(w.init_file).key_values()
         vars = q.parse_file(w.input_file).key_values()
         # pprint(vars)
         diff = EXPECTED_VALS.difference(init_vals.keys())
         if len(diff) > 0:
-            print(f"Searching for {diff} in {code_path.name} (backend block) ..... ",end="")
+            print(f"Searching for {diff} in {code_path.name} (backend block) ... ",end="")
             more_kvs = find_backend_kvs(code_path)
             for k,v in more_kvs.items():
                 if k in diff:
@@ -57,14 +58,15 @@ def handle_specifics(root_dir:Path,
         diff2 = EXPECTED_VALS.difference(init_vals.keys())
         if len(diff2) == 1 and "role_arn" in diff2:
             acc_num = vars.get('account',init_vals.get('account',"?????"))
-            ask = "'role_arn' is not specified in the code, please Enter"
+            ask = "'role_arn' isn't specified in the code, please Enter"
             r = click.prompt(text=ask,default=f"arn:aws:iam::{acc_num}/role/admin")
+            click.prompt
             init_vals["role_arn"] = r
         if len(diff2) > 2:
             txt = f"CRITICAL: Code parse of '{code_path.name}' still renders missing vals: {diff2} !"
             raise AssertionError(txt)
 
-        pprint(init_vals)
+        print(init_vals)
                 
 @lru_cache()
 def find_backend_kvs(code_dir:Path) -> Dict[str,str]:

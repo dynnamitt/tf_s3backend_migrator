@@ -10,6 +10,7 @@ packages = [{ include = "tf_s3backend_migrator" }]
 python = "^3.10"
 click = "^8.1.3"
 ts-language-collection = {git = "https://github.com/dynnamitt/py-ts-languange-collection.git"}
+rich = "^12.6.0"
 
 
 [build-system]
