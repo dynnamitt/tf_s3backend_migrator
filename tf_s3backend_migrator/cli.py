@@ -4,7 +4,8 @@ from pathlib import Path
 from pprint import pprint
 import ts_language_collection as ts
 from . import queries as q
-from . import psudo_workspaces as p_wrkspc
+from . import psudo_workspaces as pw
+from . import core
 
 
 def die(s,code=1):
@@ -21,20 +22,8 @@ def cli_group():
                                 dir_okay=True,file_okay=False),
                 nargs=1)
 def analyze(directory):
-    excludes = ["tf-code"]
-    pattern_pairs = [("%/input.tfvars","init.tfvars"),
-                ("input-%.tfvars","Makefile")]
-    for patt,init_glob in pattern_pairs:
-        ws = p_wrkspc.scan_tf_dir(Path(directory),patt,excludes)
-        if len(ws)>0 :
-            print(f"project is of type {patt}")
-            for w in ws:
-                w.append_init(init_glob)
-            pprint(ws)
-            for w in ws:
-                print(f"== {w.name} ==")
-                pprint(q.parse_file(w.init_file).key_values())
-
+    core.main(Path(directory))
+               
 @cli_group.command()
 @click.argument("file-path", 
                 type=click.Path(exists=True,resolve_path=True),

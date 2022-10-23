@@ -4,7 +4,6 @@ from pathlib import Path
 import glob
 import re
 from dataclasses import dataclass
-from pprint import pprint
 
 WILDCARD = '%'
 NON_SLASH_GRP_MATCH = '([^/]*)'
@@ -13,7 +12,7 @@ NON_SLASH_GRP_MATCH = '([^/]*)'
 class TFWannabeWorkSpace:
     name: str
     input_file: Path
-    # init_file: Optional[Path]
+    init_file: Path = Path(".missing") # removes it from _init_
 
     @classmethod
     def from_match(cls,match_pattern:str,input_file:Path) -> 'TFWannabeWorkSpace':
