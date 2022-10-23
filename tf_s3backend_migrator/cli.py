@@ -33,14 +33,23 @@ def analyze(directory):
             pprint(ws)
             for w in ws:
                 print(f"== {w.name} ==")
-                pprint(q.parse_file(w.init_file).attr_expr())
+                pprint(q.parse_file(w.init_file).key_values())
 
 @cli_group.command()
 @click.argument("file-path", 
                 type=click.Path(exists=True,resolve_path=True),
                 nargs=1)
 def hcl_backend(file_path):
-    q.parse_file(Path(file_path)).tf_backend()
+    vs = q.parse_file(Path(file_path)).tf_backend_body_kv()
+    pprint(vs)
+
+@cli_group.command()
+@click.argument("file-path", 
+                type=click.Path(exists=True,resolve_path=True),
+                nargs=1)
+def hcl_vars(file_path):
+    vs = q.parse_file(Path(file_path)).key_values()
+    pprint(vs)
 
 
 @cli_group.command()

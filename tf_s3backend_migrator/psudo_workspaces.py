@@ -13,15 +13,15 @@ NON_SLASH_GRP_MATCH = '([^/]*)'
 class TFWannabeWorkSpace:
     name: str
     input_file: Path
-    init_file: Optional[Path]
+    # init_file: Optional[Path]
 
     @classmethod
     def from_match(cls,match_pattern:str,input_file:Path) -> 'TFWannabeWorkSpace':
         regex_ = match_pattern.replace(WILDCARD, NON_SLASH_GRP_MATCH)
         f = str(input_file.absolute())
         s_result = re.search(regex_, f)
-        name = s_result.group(1)
-        return TFWannabeWorkSpace(name,input_file,None)
+        name = s_result.group(1) # type: ignore (pyright fix)
+        return TFWannabeWorkSpace(name,input_file)
 
     def append_init(self,glob_pattern:str):
         assert self.input_file.exists()
