@@ -27,13 +27,15 @@ def main(root_dir:Path):
         ws_names = [w.name for w in ws] 
         if len(ws)>0 :
             print(f"Project_dir is of type {patt}")
-            print(f"Found {ws_names} (aka psudo_workspaces)")
+            print(f"Psudo-workspaces located:")
+            [print(" - ",w) for w in ws_names]
             handle_specifics(root_dir,init_glob,ws)
                 
 def handle_specifics(root_dir:Path,
                      init_glob:str,
                      ws: List[pw.TFWannabeWorkSpace]):
 
+    code_path = Path(root_dir,TF_CODE_DIR)
     for w in ws:
         w.append_init(init_glob)
         print()
@@ -44,7 +46,6 @@ def handle_specifics(root_dir:Path,
         # pprint(vars)
         diff = EXPECTED_VALS.difference(init_vals.keys())
         if len(diff) > 0:
-            code_path = Path(root_dir,TF_CODE_DIR)
             print(f"Searching for {diff} in {code_path.name} (backend block) ..... ",end="")
             more_kvs = find_backend_kvs(code_path)
             for k,v in more_kvs.items():
@@ -60,7 +61,8 @@ def handle_specifics(root_dir:Path,
             r = click.prompt(text=ask,default=f"arn:aws:iam::{acc_num}/role/admin")
             init_vals["role_arn"] = r
         if len(diff2) > 2:
-            raise AssertionError(f"CRITICAL: Code parse of '{code_path.name}' still renders missing vals: {diff2} !")
+            txt = f"CRITICAL: Code parse of '{code_path.name}' still renders missing vals: {diff2} !"
+            raise AssertionError(txt)
 
         pprint(init_vals)
                 
@@ -71,8 +73,4 @@ def find_backend_kvs(code_dir:Path) -> Dict[str,str]:
     hits = [itm for itm in kvs_set if itm != None] 
     print("[code-parsed]",end="")
     return hits[0] if len(hits)==1 else {}
-
-            
-        
-
 
