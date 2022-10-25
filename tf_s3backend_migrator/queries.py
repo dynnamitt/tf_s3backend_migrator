@@ -7,6 +7,8 @@ from pprint import pprint
 CAP_NODE = 0
 CAP_ID = 1
 
+QResult = Dict[str,str]|None
+
 @dataclass()
 class TSResult:
     """Abstract class w Tree-sitter main values"""
@@ -16,10 +18,10 @@ class TSResult:
     lang: ts_coll.Language
     parser: ts_coll.Parser
 
-    def key_values(self,key_name:Optional[str]=None) -> Optional[Dict[str,str]]:
+    def key_values(self,key_name:Optional[str]=None) -> QResult:
         raise NotImplemented("Use subclass")
 
-    def tf_backend_body_kv(self, backend_type:str="s3") -> Optional[Dict[str,str]]:
+    def tf_backend_body_kv(self, backend_type:str="s3") -> QResult:
         raise NotImplemented("Use subclass")
 
     def wrap_kvs(self,scm_query) -> Optional[Dict[str,str]]:
@@ -43,7 +45,7 @@ class TSResult:
 class HCLQueries(TSResult):
     """Hashicorp HCL queries"""
 
-    def key_values(self, key_name:Optional[str]=None)-> Optional[Dict[str,str]]:
+    def key_values(self, key_name:Optional[str]=None)-> QResult:
         only_key_name = f'( #eq? @key "{key_name}" )' if key_name else ''
         scm = f"""
         (
@@ -54,7 +56,7 @@ class HCLQueries(TSResult):
         """
         return self.wrap_kvs(scm)
 
-    def tf_backend_body_kv(self, backend_type:str="s3") -> Optional[Dict[str,str]]:
+    def tf_backend_body_kv(self, backend_type:str="s3") -> QResult:
         scm = f"""
         (block (identifier) @block 
             (body (block 
@@ -77,13 +79,23 @@ class HCLQueries(TSResult):
 class MakeQueries(TSResult):
     """Gnu Make(file) queries"""
 
-    def key_values(self, key_name: Optional[str] = None) -> Optional[Dict[str, str]]:
+    def key_values(self, key_name: Optional[str] = None) -> QResult:
         scm = """
         (variable_assignment
          name: (word) @key 
          value: (text) @val)
         """
         return self.wrap_kvs(scm)
+
+    def tf_backend_body_kv(self, backend_type: str = "s3") -> QResult:
+        STATE_PRE = 's_'
+        all_keys = self.key_values()
+        # hack in place 
+        if all_keys:
+            res = { k.removeprefix(STATE_PRE):v for k,v in all_keys.items() if k.startswith(STATE_PRE)}
+            if 'table' in res.keys():
+                res['dynamodb_table'] = res['table']
+            return res
 
 UN_SUPP_LANG = "That language is not supported here!"
 

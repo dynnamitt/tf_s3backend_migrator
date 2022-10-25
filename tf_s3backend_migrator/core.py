@@ -6,9 +6,11 @@ from pathlib import Path
 from typing import List,Dict
 import click
 
+MK_FILE = "Makefile"
+
 pattern_pairs = {
         ("%/input.tfvars","init.tfvars"),
-        ("input-%.tfvars","Makefile")
+        ("input-%.tfvars",MK_FILE)
         }
 
 TF_CODE_DIR = "tf-code"
@@ -45,7 +47,9 @@ def handle_specifics(root_dir:Path,
         print()
         print(f"====== Psudo-TF-Workspace: [{CS[idx+1]}]{w.name}[/{CS[idx+1]}] :computer:")
         print()
-        init_vals = q.parse_file(w.init_file).key_values()
+        init_result = q.parse_file(w.init_file)
+        init_vals = init_result.tf_backend_body_kv() if w.init_file.name == MK_FILE else init_result.key_values()
+        print("INIT:",init_vals)
         vars = q.parse_file(w.input_file).key_values()
         # pprint(vars)
         diff = EXPECTED_VALS.difference(init_vals.keys())
