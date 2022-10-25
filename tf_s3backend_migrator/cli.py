@@ -40,6 +40,14 @@ def hcl_vars(file_path):
     vs = q.parse_file(Path(file_path)).key_values()
     pprint(vs)
 
+@cli_group.command()
+@click.argument("file-path", 
+                type=click.Path(exists=True,resolve_path=True),
+                nargs=1)
+def mk_vars(file_path):
+    vs = q.parse_file(Path(file_path)).key_values()
+    pprint(vs)
+
 
 @cli_group.command()
 @click.argument("file-path", 
@@ -47,7 +55,6 @@ def hcl_vars(file_path):
                 nargs=1)
 def hcl_full_tree(file_path):
 
-    hcl = ts.get_language("hcl")
     parser = ts.get_parser("hcl") 
 
     # open file
@@ -56,7 +63,21 @@ def hcl_full_tree(file_path):
         tree = parser.parse(code_buf)
 
     print(tree.root_node.sexp()) 
-    print("-------------")
+
+@cli_group.command()
+@click.argument("file-path", 
+                type=click.Path(exists=True,resolve_path=True),
+                nargs=1)
+def mk_full_tree(file_path):
+
+    parser = ts.get_parser("make") 
+
+    # open file
+    with open(file_path,"rb") as f:
+        code_buf = f.read()
+        tree = parser.parse(code_buf)
+
+    print(tree.root_node.sexp()) 
 
 
 

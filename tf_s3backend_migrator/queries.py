@@ -9,16 +9,28 @@ CAP_ID = 1
 
 @dataclass()
 class TSResult:
+    """Abstract class w Tree-sitter main values"""
+
     code: bytes
     tree: ts_coll.Tree
     lang: ts_coll.Language
     parser: ts_coll.Parser
 
-    def key_values(self,key_name:Optional[str]=None) -> Dict[str,str]:
+    def key_values(self,key_name:Optional[str]=None) -> Optional[Dict[str,str]]:
         raise NotImplemented("Use subclass")
 
-    def tf_backend_body_kv(self, backend_type:str="s3") -> Dict[str,str]:
+    def tf_backend_body_kv(self, backend_type:str="s3") -> Optional[Dict[str,str]]:
         raise NotImplemented("Use subclass")
+
+    def wrap_kvs(self,scm_query) -> Optional[Dict[str,str]]:
+        query = self.lang.query(scm_query)
+        # clever zip_from_i*2
+        i_captures = iter(query.captures(self.tree.root_node))
+        cap_paired = zip(i_captures, i_captures)
+        return {
+                self.node_text(k[CAP_NODE]): self.node_text(v[CAP_NODE]) 
+                for k,v in cap_paired }
+
     
     # https://stackoverflow.com/questions
     #       /63635500/how-to-get-the-values-from-nodes-in-tree-sitter
@@ -29,29 +41,20 @@ class TSResult:
 
 
 class HCLQueries(TSResult):
+    """Hashicorp HCL queries"""
 
-    ATTR_EXPR = """
-        (attribute (identifier) @key
-            (expression (expr_term (template_expr (quoted_template) @val) )))
-    """
-
-    def key_values(self, key_name:Optional[str]=None)-> Dict[str,str]:
+    def key_values(self, key_name:Optional[str]=None)-> Optional[Dict[str,str]]:
         only_key_name = f'( #eq? @key "{key_name}" )' if key_name else ''
         scm = f"""
         (
-            {self.ATTR_EXPR}
+            (attribute (identifier) @key
+            (expression (expr_term (template_expr (quoted_template) @val) )))
             {only_key_name}
         )
         """
-        query = self.lang.query(scm)
-        # clever zip_from_i*2
-        i_captures = iter(query.captures(self.tree.root_node))
-        cap_paired = zip(i_captures, i_captures)
-        return {
-                self.node_text(k[CAP_NODE]): self.node_text(v[CAP_NODE]) 
-                for k,v in cap_paired }
+        return self.wrap_kvs(scm)
 
-    def tf_backend_body_kv(self, backend_type:str="s3") -> Dict[str,str]:
+    def tf_backend_body_kv(self, backend_type:str="s3") -> Optional[Dict[str,str]]:
         scm = f"""
         (block (identifier) @block 
             (body (block 
@@ -71,10 +74,23 @@ class HCLQueries(TSResult):
             body_txt = self.node_text(body_caps[0][CAP_NODE])
             return parse_txt(body_txt,"hcl").key_values()
 
+class MakeQueries(TSResult):
+    """Gnu Make(file) queries"""
+
+    def key_values(self, key_name: Optional[str] = None) -> Optional[Dict[str, str]]:
+        scm = """
+        (variable_assignment
+         name: (word) @key 
+         value: (text) @val)
+        """
+        return self.wrap_kvs(scm)
 
 UN_SUPP_LANG = "That language is not supported here!"
 
+
+
 def parse_txt(txt:str,lang:str) -> TSResult:
+    """Factory from string"""
     l = ts_coll.get_language(lang)
     parser = ts_coll.get_parser(lang)
     code_buf = bytes(txt,"UTF-8")
@@ -83,11 +99,13 @@ def parse_txt(txt:str,lang:str) -> TSResult:
         case "hcl":
             return HCLQueries(code_buf,tree,l,parser)
         case "make":
-            raise NotImplemented()
+            return MakeQueries(code_buf,tree,l,parser)
         case _:
             raise AssertionError(UN_SUPP_LANG)
 
 def parse_file(file_path:Path) -> TSResult:
+    """Factory from string"""
+
     lang = "hcl" if file_path.suffix in [".tfvars",".tf"] else "make"
     l = ts_coll.get_language(lang)
     parser = ts_coll.get_parser(lang) 
@@ -101,9 +119,7 @@ def parse_file(file_path:Path) -> TSResult:
         case "hcl":
             return HCLQueries(code_buf,tree,l,parser)
         case "make":
-            raise NotImplemented()
-        case _:
-            raise AssertionError(UN_SUPP_LANG)
+            return MakeQueries(code_buf,tree,l,parser)
 
 
 

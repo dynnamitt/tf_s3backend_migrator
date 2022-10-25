@@ -11,13 +11,16 @@ pattern_pairs = {
         ("input-%.tfvars","Makefile")
         }
 
+TF_CODE_DIR = "tf-code"
+
+DEF_ARN = "arn:aws:iam::{}:role/admin"
+
 EXPECTED_VALS = {"bucket",
                  "region",
                  "dynamodb_table",
                  "key",
                  "role_arn"}
 
-TF_CODE_DIR = "tf-code"
 CS = ["cyan","blue","yellow","red","orange","magenta"]
 
 def main(root_dir:Path):
@@ -59,7 +62,7 @@ def handle_specifics(root_dir:Path,
         if len(diff2) == 1 and "role_arn" in diff2:
             acc_num = vars.get('account',init_vals.get('account',"?????"))
             ask = "'role_arn' isn't specified in the code, please Enter"
-            r = click.prompt(text=ask,default=f"arn:aws:iam::{acc_num}/role/admin")
+            r = click.prompt(text=ask, default = DEF_ARN.format(acc_num))
             click.prompt
             init_vals["role_arn"] = r
         if len(diff2) > 2:
