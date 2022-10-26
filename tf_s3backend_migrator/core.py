@@ -26,17 +26,16 @@ EXPECTED_VALS = {"bucket",
 
 CS = ["cyan","blue","yellow","red","orange","magenta"]
 
-def main(root_dir:Path,new_backend:Path):
+def main(root_dir:Path,new_backend_tf:Path):
     """Select the type and handle it"""
-   
-    try:
-        dest_backend_keys = q.parse_file(new_backend).tf_backend_body_kv()
-        print("dest",dest_backend_keys)
-    except ModuleNotFoundError as e:
-        print(str(e))
-        raise AssertionError(f"{str(new_backend)} do not contain as TF BACKEND block ! ")
 
-
+    assert new_backend_tf.suffix == ".tf"
+    dest_backend_keys = q.parse_file(new_backend_tf).tf_backend_body_kv()
+    print("Destination backend vals:",dest_backend_keys)
+    diff_new_backend_tf = EXPECTED_VALS.difference(dest_backend_keys.keys())
+    print("Warning: Missing keys:",diff_new_backend_tf) if len(diff_new_backend_tf)>0 else None
+    if not click.confirm("Continue ?"):
+        return
 
     for patt,init_glob in pattern_pairs:
         ws = pw.scan_tf_dir(root_dir,patt,excludes=[TF_CODE_DIR])
@@ -46,6 +45,9 @@ def main(root_dir:Path,new_backend:Path):
             print(f"Psudo-workspaces located:")
             [print(f" - [{CS[idx+1]}]{w}[/{CS[idx+1]}]") for idx,w in enumerate(ws_names)]
             handle_current(root_dir,init_glob,ws)
+        else:
+            print(f"{root_dir} isn't a legacy TF directory, aborting")
+            return
                 
 def handle_current(root_dir :Path,
                      init_glob :str,
@@ -61,12 +63,12 @@ def handle_current(root_dir :Path,
         init_vals = init_result.tf_backend_body_kv() if w.init_file.name == MK_FILE else init_result.key_values()
         vars = q.parse_file(w.input_file).key_values()
         # pprint(vars)
-        diff = EXPECTED_VALS.difference(init_vals.keys())
-        if len(diff) > 0:
-            print(f"Searching for {diff} in {code_path.name} (backend block) ... ",end="")
+        diff1 = EXPECTED_VALS.difference(init_vals.keys())
+        if len(diff1) > 0:
+            print(f"Searching for {diff1} in {code_path.name} (backend block) ... ",end="")
             more_kvs = scan_dir_backend_kvs(code_path)
             for k,v in more_kvs.items():
-                if k in diff:
+                if k in diff1:
                     init_vals[k] = v
                     print(f" -> found '{k}' ",end="")
         # round 2

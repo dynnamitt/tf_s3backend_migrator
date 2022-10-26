@@ -17,16 +17,16 @@ def cli_group():
     pass
 
 @cli_group.command()
-@click.argument("directory", 
+@click.argument("tf_directory", 
                 type=click.Path(exists=True,resolve_path=True,
                                 dir_okay=True,file_okay=False),
                 nargs=1)
-@click.argument("new_backend", 
+@click.argument("new_backend_tf", 
                 type=click.Path(exists=True,resolve_path=True,
                                 dir_okay=False,file_okay=True),
                 nargs=1)
-def migrate(directory:str,new_backend:str):
-    core.main(Path(directory),Path(new_backend))
+def migrate(tf_directory:str,new_backend_tf:str):
+    core.main(Path(tf_directory),Path(new_backend_tf))
                
 @cli_group.command()
 @click.argument("file-path", 

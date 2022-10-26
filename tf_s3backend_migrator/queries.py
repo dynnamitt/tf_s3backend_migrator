@@ -115,22 +115,30 @@ def parse_txt(txt:str,lang:str) -> TSResult:
         case _:
             raise AssertionError(UN_SUPP_LANG)
 
-def parse_file(file_path:Path) -> TSResult:
+def parse_file(code_file:Path) -> TSResult:
     """Factory from string"""
 
-    lang = "hcl" if file_path.suffix in [".tfvars",".tf"] else file_path.name.upper()
+    assert code_file.is_file()
+
+    if code_file.suffix in [".tfvars",".tf"]:
+        lang = "hcl"
+    elif code_file.suffix == ".mk" or code_file.name == "Makefile":
+        lang = "make"
+    else:
+        raise AssertionError(f"'{code_file.name}' unrecognized filename/ext")
+
     l = ts_coll.get_language(lang)
     parser = ts_coll.get_parser(lang) 
 
     # open file
-    with open(file_path,"rb") as f:
+    with open(code_file,"rb") as f:
         code_buf = f.read()
         tree = parser.parse(code_buf)
 
     match lang:
         case "hcl":
             return HCLQueries(code_buf,tree,l,parser)
-        case "MAKEFILE":
+        case "make":
             return MakeQueries(code_buf,tree,l,parser)
         case _:
             raise AssertionError(UN_SUPP_LANG)
