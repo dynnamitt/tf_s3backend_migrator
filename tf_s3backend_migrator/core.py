@@ -17,6 +17,7 @@ TF_CODE_DIR = "tf-code"
 
 DEF_ARN = "arn:aws:iam::{}:role/admin"
 
+# 100% perf : make enum
 EXPECTED_VALS = {"bucket",
                  "region",
                  "dynamodb_table",
@@ -25,8 +26,17 @@ EXPECTED_VALS = {"bucket",
 
 CS = ["cyan","blue","yellow","red","orange","magenta"]
 
-def main(root_dir:Path):
+def main(root_dir:Path,new_backend:Path):
     """Select the type and handle it"""
+   
+    try:
+        dest_backend_keys = q.parse_file(new_backend).tf_backend_body_kv()
+        print("dest",dest_backend_keys)
+    except ModuleNotFoundError as e:
+        print(str(e))
+        raise AssertionError(f"{str(new_backend)} do not contain as TF BACKEND block ! ")
+
+
 
     for patt,init_glob in pattern_pairs:
         ws = pw.scan_tf_dir(root_dir,patt,excludes=[TF_CODE_DIR])
@@ -35,10 +45,10 @@ def main(root_dir:Path):
             print(f"\n:bulb: Project_dir is of type '{patt}'\n")
             print(f"Psudo-workspaces located:")
             [print(f" - [{CS[idx+1]}]{w}[/{CS[idx+1]}]") for idx,w in enumerate(ws_names)]
-            handle_specifics(root_dir,init_glob,ws)
+            handle_current(root_dir,init_glob,ws)
                 
-def handle_specifics(root_dir:Path,
-                     init_glob:str,
+def handle_current(root_dir :Path,
+                     init_glob :str,
                      ws: List[pw.TFWannabeWorkSpace]):
 
     code_path = Path(root_dir,TF_CODE_DIR)
@@ -49,13 +59,12 @@ def handle_specifics(root_dir:Path,
         print()
         init_result = q.parse_file(w.init_file)
         init_vals = init_result.tf_backend_body_kv() if w.init_file.name == MK_FILE else init_result.key_values()
-        print("INIT:",init_vals)
         vars = q.parse_file(w.input_file).key_values()
         # pprint(vars)
         diff = EXPECTED_VALS.difference(init_vals.keys())
         if len(diff) > 0:
             print(f"Searching for {diff} in {code_path.name} (backend block) ... ",end="")
-            more_kvs = find_backend_kvs(code_path)
+            more_kvs = scan_dir_backend_kvs(code_path)
             for k,v in more_kvs.items():
                 if k in diff:
                     init_vals[k] = v
@@ -64,7 +73,7 @@ def handle_specifics(root_dir:Path,
         print()
         diff2 = EXPECTED_VALS.difference(init_vals.keys())
         if len(diff2) == 1 and "role_arn" in diff2:
-            acc_num = vars.get('account',init_vals.get('account',"?????"))
+            acc_num = vars.get('account',init_vals.get('account',"???????????"))
             ask = "'role_arn' isn't specified in the code, please Enter"
             r = click.prompt(text=ask, default = DEF_ARN.format(acc_num))
             click.prompt
@@ -76,10 +85,16 @@ def handle_specifics(root_dir:Path,
         print(init_vals)
                 
 @lru_cache()
-def find_backend_kvs(code_dir:Path) -> Dict[str,str]:
-    kvs_set = [q.parse_file(f).tf_backend_body_kv()
-            for f in code_dir.iterdir() if f.suffix == ".tf"]
-    hits = [itm for itm in kvs_set if itm != None] 
-    print("[code-parsed]",end="")
-    return hits[0] if len(hits)==1 else {}
+def scan_dir_backend_kvs(code_dir:Path) -> q.QResult:
+    tfs = [f for f in code_dir.iterdir() if f.suffix == ".tf"]
+
+    for f in tfs:
+        try:
+            kvs = q.parse_file(f).tf_backend_body_kv()
+            print("|code-parsed|",end="")
+            return kvs
+        except ModuleNotFoundError:
+            pass
+            # just move on to next file
+    return {}
 

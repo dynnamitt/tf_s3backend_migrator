@@ -21,8 +21,12 @@ def cli_group():
                 type=click.Path(exists=True,resolve_path=True,
                                 dir_okay=True,file_okay=False),
                 nargs=1)
-def analyze(directory):
-    core.main(Path(directory))
+@click.argument("new_backend", 
+                type=click.Path(exists=True,resolve_path=True,
+                                dir_okay=False,file_okay=True),
+                nargs=1)
+def migrate(directory:str,new_backend:str):
+    core.main(Path(directory),Path(new_backend))
                
 @cli_group.command()
 @click.argument("file-path", 
