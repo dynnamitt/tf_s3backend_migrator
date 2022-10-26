@@ -1,6 +1,7 @@
 from functools import lru_cache
 from . import psudo_workspaces as pw
 from . import queries as q
+from . import aws
 from rich import print
 from pathlib import Path
 from typing import List,Dict
@@ -30,7 +31,12 @@ def main(root_dir:Path,new_backend_tf:Path):
     """Select the type and handle it"""
 
     assert new_backend_tf.suffix == ".tf"
-    dest_backend_keys = q.parse_file(new_backend_tf).tf_backend_body_kv()
+    try:
+        dest_backend_keys = q.parse_file(new_backend_tf).tf_backend_body_kv()
+    except q.TSQueryError as e:
+        print("Bad new_backend_tf file!")
+        print(e)
+        return
     print("Destination backend vals:",dest_backend_keys)
     diff_new_backend_tf = EXPECTED_VALS.difference(dest_backend_keys.keys())
     print("Warning: Missing keys:",diff_new_backend_tf) if len(diff_new_backend_tf)>0 else None
@@ -39,15 +45,14 @@ def main(root_dir:Path,new_backend_tf:Path):
 
     for patt,init_glob in pattern_pairs:
         ws = pw.scan_tf_dir(root_dir,patt,excludes=[TF_CODE_DIR])
+    
         ws_names = [w.name for w in ws] 
         if len(ws)>0 :
             print(f"\n:bulb: Project_dir is of type '{patt}'\n")
             print(f"Psudo-workspaces located:")
             [print(f" - [{CS[idx+1]}]{w}[/{CS[idx+1]}]") for idx,w in enumerate(ws_names)]
             handle_current(root_dir,init_glob,ws)
-        else:
-            print(f"{root_dir} isn't a legacy TF directory, aborting")
-            return
+
                 
 def handle_current(root_dir :Path,
                      init_glob :str,
@@ -78,13 +83,16 @@ def handle_current(root_dir :Path,
             acc_num = vars.get('account',init_vals.get('account',"???????????"))
             ask = "'role_arn' isn't specified in the code, please Enter"
             r = click.prompt(text=ask, default = DEF_ARN.format(acc_num))
-            click.prompt
             init_vals["role_arn"] = r
-        if len(diff2) > 2:
+        elif len(diff2) > 2:
             txt = f"CRITICAL: Code parse of '{code_path.name}' still renders missing vals: {diff2} !"
             raise AssertionError(txt)
 
+        # return init_vals
         print(init_vals)
+        print("Downloading ...")
+        aws.download_s3_obj("tf_migr_tool",**init_vals)
+        
                 
 @lru_cache()
 def scan_dir_backend_kvs(code_dir:Path) -> q.QResult:
@@ -95,7 +103,7 @@ def scan_dir_backend_kvs(code_dir:Path) -> q.QResult:
             kvs = q.parse_file(f).tf_backend_body_kv()
             print("|code-parsed|",end="")
             return kvs
-        except ModuleNotFoundError:
+        except q.TSQueryError:
             pass
             # just move on to next file
     return {}

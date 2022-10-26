@@ -8,6 +8,9 @@ CAP_ID = 1
 
 QResult = Dict[str,str]
 
+class TSQueryError(Exception):
+    pass
+
 @dataclass()
 class TSResult:
     """Abstract class w Tree-sitter main values"""
@@ -29,7 +32,7 @@ class TSResult:
         i_captures = iter(query.captures(self.tree.root_node))
         cap_paired = zip(i_captures, i_captures)
         return {
-                self.node_text(k[CAP_NODE]): self.node_text(v[CAP_NODE]) 
+                self.node_text(k[CAP_NODE]).strip() : self.node_text(v[CAP_NODE]).strip() 
                 for k,v in cap_paired }
 
     
@@ -75,7 +78,8 @@ class HCLQueries(TSResult):
             body_txt = self.node_text(body_caps[0][CAP_NODE])
             return parse_txt(body_txt,"hcl").key_values()
         else:
-            raise ModuleNotFoundError(f"No terraform.backend.{backend_type} here!")
+            raise TSQueryError(f"No terraform.backend.{backend_type} block")
+            
 
 class MakeQueries(TSResult):
     """Gnu Make(file) queries"""
@@ -113,7 +117,7 @@ def parse_txt(txt:str,lang:str) -> TSResult:
         case "make":
             return MakeQueries(code_buf,tree,l,parser)
         case _:
-            raise AssertionError(UN_SUPP_LANG)
+            raise RuntimeError(UN_SUPP_LANG)
 
 def parse_file(code_file:Path) -> TSResult:
     """Factory from string"""
@@ -125,7 +129,7 @@ def parse_file(code_file:Path) -> TSResult:
     elif code_file.suffix == ".mk" or code_file.name == "Makefile":
         lang = "make"
     else:
-        raise AssertionError(f"'{code_file.name}' unrecognized filename/ext")
+        raise NameError(f"'{code_file.name}' unrecognized filename/ext")
 
     l = ts_coll.get_language(lang)
     parser = ts_coll.get_parser(lang) 
