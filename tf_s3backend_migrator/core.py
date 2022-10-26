@@ -92,6 +92,7 @@ def handle_current(root_dir :Path,
         print(init_vals)
         print("Downloading ...")
         aws.download_s3_obj("tf_migr_tool",**init_vals)
+        # oh god ... clean up these for-loops eh??
         
                 
 @lru_cache()
