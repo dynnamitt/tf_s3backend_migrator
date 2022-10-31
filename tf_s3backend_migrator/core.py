@@ -50,11 +50,16 @@ def main(root_dir:Path, new_backend_tf:Path):
     for idx,w in enumerate(ws_names):
         print(f" - [{CS[idx+1]}]{w}[/{CS[idx+1]}]") 
      
+    print("\n--*--\n")
+
     state_backups = handle_downloads( Path(root_dir,pw.TF_CODE_DIR),project)
     for sb in state_backups:
         env_part = f"env:/{sb.workspace_name}/" if sb.workspace_name != DEFAULT_WRKSPACE else ""
         print("<<<< Uploading {temp_file} to s3://{bucket}/{env_part}{key} ...."
               .format(temp_file=sb.temp_file,env_part=env_part,**dest_backend_keys)) 
+        aws.upload_s3_obj(sb.temp_file,"tf_migrapolis",**dest_backend_keys)
+
+    print("\n--*--\n")
 
 
 def handle_downloads(code_path :Path, project:pw.LegacyProject) -> List[StateBackup]: 

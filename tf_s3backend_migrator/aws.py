@@ -2,6 +2,8 @@ import boto3
 import os
 from pathlib import Path
 from tempfile import gettempdir
+
+from botocore import credentials
 # create an STS client object that represents a live connection to the 
 # STS service
 sts_client = boto3.client('sts')
@@ -11,16 +13,8 @@ def download_s3_obj(sess_name:str, **kwargs) -> Path:
     role_arn = kwargs["role_arn"]
     bucket = kwargs["bucket"]
     key = kwargs["key"]
-
-    assumed_role_object = sts_client.assume_role( RoleArn=role_arn,
-                                               RoleSessionName=sess_name )
-
-    credentials = assumed_role_object['Credentials']
-    
-    s3 = boto3.resource('s3',
-        aws_access_key_id = credentials['AccessKeyId'],
-        aws_secret_access_key = credentials['SecretAccessKey'],
-        aws_session_token = credentials['SessionToken'])
+  
+    s3 = boto3.resource('s3',**creds(sess_name,role_arn))
     
     tmp_dir = Path(gettempdir(),f"tf_migrate-{os.getpid()}", bucket,key)
     
@@ -28,3 +22,23 @@ def download_s3_obj(sess_name:str, **kwargs) -> Path:
 
     s3.meta.client.download_file(bucket, key, str(tmp_dir.absolute()))
     return tmp_dir
+
+def upload_s3_obj(file:Path,sess_name:str,**kwargs): 
+    role_arn = kwargs["role_arn"]
+    bucket = kwargs["bucket"]
+    key = kwargs["key"]
+    s3 = boto3.resource('s3',**creds(sess_name,role_arn))
+
+    s3.meta.client.upload_file(str(file.absolute()), bucket, key )
+
+def creds(sess_name:str, role_arn:str) -> dict:
+
+    assumed_role = sts_client.assume_role( RoleArn=role_arn,
+                                               RoleSessionName=sess_name )
+    credentials = assumed_role['Credentials']
+    return {
+        'aws_access_key_id' : credentials['AccessKeyId'],
+        'aws_secret_access_key' : credentials['SecretAccessKey'],
+        'aws_session_token' : credentials['SessionToken']
+        }
+
