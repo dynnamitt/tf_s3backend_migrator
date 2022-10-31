@@ -2,6 +2,8 @@ import boto3
 import os
 from pathlib import Path
 from tempfile import gettempdir
+from botocore.client import ClientError
+import click
 
 from botocore import credentials
 # create an STS client object that represents a live connection to the 
@@ -28,6 +30,15 @@ def upload_s3_obj(file:Path,sess_name:str,**kwargs):
     bucket = kwargs["bucket"]
     key = kwargs["key"]
     s3 = boto3.resource('s3',**creds(sess_name,role_arn))
+    
+    try:
+        object = s3.Object(bucket,key)
+        object.load()
+        if not click.confirm("ops, file exist in s3. Overwrite?"):
+            print("aborted.")
+            return
+    except ClientError as ex:
+        pass # This is what we prefer, 404 basically
 
     s3.meta.client.upload_file(str(file.absolute()), bucket, key )
 

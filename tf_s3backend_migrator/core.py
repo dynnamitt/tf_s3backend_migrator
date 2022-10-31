@@ -49,10 +49,10 @@ def main(root_dir:Path, new_backend_tf:Path):
     ws_names = [w.name for w in project.workspaces] 
     for idx,w in enumerate(ws_names):
         print(f" - [{CS[idx+1]}]{w}[/{CS[idx+1]}]") 
-     
-    print("\n--*--\n")
-
+    
     state_backups = handle_downloads( Path(root_dir,pw.TF_CODE_DIR),project)
+    
+    print("\n--*--\n")
     for sb in state_backups:
         env_part = f"env:/{sb.workspace_name}/" if sb.workspace_name != DEFAULT_WRKSPACE else ""
         print("<<<< Uploading {temp_file} to s3://{bucket}/{env_part}{key} ...."
