@@ -1,16 +1,11 @@
 locals {
 
-
   aws_accounts = {
-    test         = "822152007605"
-    stage        = "739805770819"
-    prod         = "905279427843"
-    team_cmp     = "337896910382"
-    ruterbastion = "028715740751"
-    master       = "067137084833"
-
+    test         = "???"
+    stage        = "???"
+    prod         = "???"
   }
-  localuser_provider_role_fmt = "arn:aws:iam::%s:role/bfadmin"
+  localuser_provider_role_fmt = "arn:aws:iam::%s:role/admin"
 
   # USEFUL shortcut
   this = local.wrkspc_config[terraform.workspace]
