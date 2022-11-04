@@ -50,6 +50,7 @@ def upload_to_s3(file: Path, role_arn: str, bucket: str, key: str, **_):
 
 class AwsArn:
     def __init__(self, arn: str):
+        self.x = 1
 
         # http://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
         elements = arn.split(":")
@@ -64,8 +65,9 @@ class AwsArn:
             result["resourcetype"], result["resource"] = elements[5:]
         elif "/" not in elements[5]:
             result["resource"] = elements[5]
-            result["resourcetype"] = None
+            result.pop("resourcetype", None)
         else:
             result["resourcetype"], result["resource"] = elements[5].split("/")
 
-        self.__dict__ = result
+        for k, v in result.items():
+            self.__dict__[k] = v

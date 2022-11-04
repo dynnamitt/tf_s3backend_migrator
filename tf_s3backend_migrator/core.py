@@ -77,14 +77,16 @@ def main(root_dir: Path, new_backend_tf: Path):
             )
         )
         aws.upload_to_s3(sb.temp_file, **dest_backend_keys)
-        sb.variable_map["aws_account_"] = sb.role_arn.account
+        sb.variable_map["__account__"] = "xxyy"  # + sb.role_arn.account
+        sb.variable_map["xxxx"] = "1"
+        print(sb.variable_map)
         config_map[true_wrkspc] = sb.variable_map
 
-    dest_config_tf = new_backend_tf.parent / CONF_FILE
-    config_tf = render_config_tf(dest_config_tf, config_map)
+    config_tf = render_config_tf(C_TEMPL_FILE, config_map)
     print(f" ------- {CONF_FILE} ---------")
     print(config_tf)
     print(f" ------- {CONF_FILE} ---------")
+    dest_config_tf = new_backend_tf.parent / CONF_FILE
     if dest_config_tf.exists():
         print("WARN: file exist")
 
@@ -151,12 +153,14 @@ def handle_downloads(code_path: Path, project: pw.LegacyProject) -> List[StateBa
 
 
 def render_config_tf(file: Path, data: dict) -> str:
+    print(data)
     wrkspc_data_txt = json.dumps(data, indent=2).replace(":", "=")
 
     with open(file, "r") as f:
         tf_code_templ = f.read()
+    print(file.name)
 
-    config_tf = tf_code_templ.replace(C_MAP_TEMPL_PH, f"    {wrkspc_data_txt}")
+    config_tf = tf_code_templ.replace(C_MAP_TEMPL_PH, wrkspc_data_txt)
     return config_tf
 
 
