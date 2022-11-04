@@ -5,7 +5,7 @@ from . import queries as q
 from . import aws
 from rich import print
 import json
-from pathlib import Path
+from pathlib import Path, Dict
 from typing import List
 import click
 
@@ -17,14 +17,14 @@ EXPECTED_VALS = {"bucket", "region", "dynamodb_table", "key", "role_arn"}
 
 DEFAULT_WRKSPACE = "test"
 
-CS = ["cyan", "blue", "yellow", "red", "orange", "magenta"]
+CS = ["cyan", "blue", "yellow", "red", "purple", "magenta", "green"]
 
 
 @dataclass()
 class StateBackup:
-    psudo_wkspc_name: str
+    psudo_wrkspc_name: str
     temp_file: Path
-    variable_map: dict
+    variable_map: Dict[str, str]
 
 
 def main(root_dir: Path, new_backend_tf: Path):
@@ -48,7 +48,9 @@ def main(root_dir: Path, new_backend_tf: Path):
 
     print(f"\n:bulb: Project_dir is of type '{project.pattern}'\n")
     print(f"Psudo-workspaces located:")
+
     ws_names = [w.name for w in project.workspaces]
+
     for idx, w in enumerate(ws_names):
         print(f" - [{CS[idx+1]}]{w}[/{CS[idx+1]}]")
 
