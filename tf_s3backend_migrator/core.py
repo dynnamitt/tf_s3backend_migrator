@@ -5,8 +5,8 @@ from . import queries as q
 from . import aws
 from rich import print
 import json
-from pathlib import Path, Dict
-from typing import List
+from pathlib import Path
+from typing import List, Dict
 import click
 
 
@@ -19,12 +19,18 @@ DEFAULT_WRKSPACE = "test"
 
 CS = ["cyan", "blue", "yellow", "red", "purple", "magenta", "green"]
 
+CONF_FILE = "config.tf"
+C_TEMPL_FILE = Path(__file__).parent / "templ/config.tf"
+C_MAP_TEMPL_PH = "###wrkspc_config###"
+C_ACC_MAP_TEMPL_PH = "###accounts###"
+
 
 @dataclass()
 class StateBackup:
     psudo_wrkspc_name: str
     temp_file: Path
     variable_map: Dict[str, str]
+    role_arn: aws.AwsArn
 
 
 def main(root_dir: Path, new_backend_tf: Path):
@@ -59,11 +65,11 @@ def main(root_dir: Path, new_backend_tf: Path):
     for sb in state_backups:
         true_wrkspc = (
             "default"
-            if sb.psudo_wkspc_name == DEFAULT_WRKSPACE
-            else sb.psudo_wkspc_name.lower()
+            if sb.psudo_wrkspc_name == DEFAULT_WRKSPACE
+            else sb.psudo_wrkspc_name.lower()
         )
         env_part = (
-            f"env:/{true_wrkspc}/" if sb.psudo_wkspc_name != DEFAULT_WRKSPACE else ""
+            f"env:/{true_wrkspc}/" if sb.psudo_wrkspc_name != DEFAULT_WRKSPACE else ""
         )
         print(
             "<<<< Uploading {temp_file} to s3://{bucket}/{env_part}{key} ....".format(
@@ -71,11 +77,23 @@ def main(root_dir: Path, new_backend_tf: Path):
             )
         )
         aws.upload_to_s3(sb.temp_file, **dest_backend_keys)
+        sb.variable_map["aws_account_"] = sb.role_arn.account
         config_map[true_wrkspc] = sb.variable_map
 
-    print("add this to dir..")
-    config_map = json.dumps(config_map, indent=2).replace(":", "=")
-    print(config_map)
+    dest_config_tf = new_backend_tf.parent / CONF_FILE
+    config_tf = render_config_tf(dest_config_tf, config_map)
+    print(f" ------- {CONF_FILE} ---------")
+    print(config_tf)
+    print(f" ------- {CONF_FILE} ---------")
+    if dest_config_tf.exists():
+        print("WARN: file exist")
+
+    if click.confirm(f"\nWrite to '{dest_config_tf}'"):
+        with open(str(dest_config_tf.absolute()), "w") as f:
+            f.write(config_tf)
+        print("saved.")
+    else:
+        print("aborre(td)")
 
 
 def handle_downloads(code_path: Path, project: pw.LegacyProject) -> List[StateBackup]:
@@ -121,12 +139,28 @@ def handle_downloads(code_path: Path, project: pw.LegacyProject) -> List[StateBa
             raise AssertionError(txt)
 
         print(">>>> Downloading source: s3://{bucket}/{key} ...".format(**init_vals))
+        print(init_vals)
+        init_vals = pw.render_possible_placeholders(init_vals, w.name)
+        print("---")
+        print(init_vals)
         temp_file = aws.download_s3_obj(**init_vals)
-        backups.append(StateBackup(w.name, temp_file, vars))
+        backups.append(
+            StateBackup(w.name, temp_file, vars, aws.AwsArn(init_vals["role_arn"]))
+        )
 
     # <-- indent
     # oh god ... clean up these for-loops eh??
     return backups
+
+
+def render_config_tf(file: Path, data: dict) -> str:
+    wrkspc_data_txt = json.dumps(data, indent=2).replace(":", "=")
+
+    with open(file, "r") as f:
+        tf_code_templ = f.read()
+
+    config_tf = tf_code_templ.replace(C_MAP_TEMPL_PH, f"    {wrkspc_data_txt}")
+    return config_tf
 
 
 @lru_cache()

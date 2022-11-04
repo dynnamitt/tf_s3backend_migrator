@@ -1,6 +1,9 @@
+from dataclasses import dataclass
 import boto3
 import os
 from pathlib import Path
+import click
+from botocore.client import ClientError
 from tempfile import gettempdir
 
 # create an STS client object that represents a live connection to the
@@ -33,5 +36,36 @@ def download_s3_obj(role_arn: str, bucket: str, key: str, **_) -> Path:
 def upload_to_s3(file: Path, role_arn: str, bucket: str, key: str, **_):
 
     s3 = boto3.resource("s3", **assume_role(role_arn))
+    try:
+        s3object = s3.Object(bucket, key)
+        s3object.load()
+        if not click.confirm("ops, file exist in s3. Overwrite?"):
+            print("aborted.")
+            return
+    except ClientError as ex:
+        pass  # This is what we prefer, 404 basically
+
     s3.meta.client.upload_file(str(file.absolute()), bucket, key)
-    print("%")
+
+
+class AwsArn:
+    def __init__(self, arn: str):
+
+        # http://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
+        elements = arn.split(":")
+        result = {
+            "arn": elements[0],
+            "partition": elements[1],
+            "service": elements[2],
+            "region": elements[3],
+            "account": elements[4],
+        }
+        if len(elements) == 7:
+            result["resourcetype"], result["resource"] = elements[5:]
+        elif "/" not in elements[5]:
+            result["resource"] = elements[5]
+            result["resourcetype"] = None
+        else:
+            result["resourcetype"], result["resource"] = elements[5].split("/")
+
+        self.__dict__ = result
