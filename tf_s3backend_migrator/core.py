@@ -138,11 +138,8 @@ def handle_downloads(code_path: Path, project: pw.LegacyProject) -> List[StateBa
             txt = f"CRITICAL: Code parse of '{code_path.name}' still renders missing vals: {diff2} !"
             raise AssertionError(txt)
 
-        print(">>>> Downloading source: s3://{bucket}/{key} ...".format(**init_vals))
-        print(init_vals)
         init_vals = pw.render_possible_placeholders(init_vals, w.name)
-        print("---")
-        print(init_vals)
+        print(">>>> Downloading source: s3://{bucket}/{key} ...".format(**init_vals))
         temp_file = aws.download_s3_obj(**init_vals)
         backups.append(
             StateBackup(w.name, temp_file, vars, aws.AwsArn(init_vals["role_arn"]))
