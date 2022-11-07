@@ -49,11 +49,11 @@ def upload_to_s3(file: Path, role_arn: str, bucket: str, key: str, **_):
 
 
 class AwsArn:
-    def __init__(self, arn: str):
-        self.x = 1
+    def __init__(self, full_arn: str):
+        self.arn = full_arn
 
         # http://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
-        elements = arn.split(":")
+        elements = full_arn.split(":")
         result = {
             "arn": elements[0],
             "partition": elements[1],
@@ -69,5 +69,4 @@ class AwsArn:
         else:
             result["resourcetype"], result["resource"] = elements[5].split("/")
 
-        for k, v in result.items():
-            self.__dict__[k] = v
+        self.result = result

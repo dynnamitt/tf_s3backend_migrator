@@ -77,9 +77,10 @@ def main(root_dir: Path, new_backend_tf: Path):
             )
         )
         aws.upload_to_s3(sb.temp_file, **dest_backend_keys)
-        sb.variable_map["__account__"] = "xxyy"  # + sb.role_arn.account
-        sb.variable_map["xxxx"] = "1"
-        print(sb.variable_map)
+        print()
+
+        # help the local-user in new file-2-write
+        sb.variable_map["localuser_assume_role_arn"] = sb.role_arn.arn
         config_map[true_wrkspc] = sb.variable_map
 
     config_tf = render_config_tf(C_TEMPL_FILE, config_map)
@@ -154,7 +155,19 @@ def handle_downloads(code_path: Path, project: pw.LegacyProject) -> List[StateBa
 
 def render_config_tf(file: Path, data: dict) -> str:
     print(data)
-    wrkspc_data_txt = json.dumps(data, indent=2).replace(":", "=")
+
+    def nested_dict_2_tf(m:dict,indent:int =4) -> str:
+        res = ""
+        ind_ = " " * indent
+        for w0,v_m in m.items():
+            res = res + f'{ind_}{w0} = {{\n'
+            for k,v in v_m.items():
+                res = res + f'{ind_}{ind_}{k} = "{v}"\n'
+            res = res + f'{ind_}}}\n'
+        return res
+
+
+    wrkspc_data_txt = nested_dict_2_tf(data)
 
     with open(file, "r") as f:
         tf_code_templ = f.read()
