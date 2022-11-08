@@ -144,11 +144,9 @@ def parse_file(code_file: Path) -> TSResult:
     with open(code_file, "rb") as f:
         code_buf = f.read()
         tree = parser.parse(code_buf)
-
-    match lang:
-        case "hcl":
-            return HCLQueries(code_buf, tree, l_obj, parser)
-        case "make":
-            return MakeQueries(code_buf, tree, l_obj, parser)
-        case _:
-            raise AssertionError(UN_SUPP_LANG)
+    if lang == "hcl":
+        return HCLQueries(code_buf, tree, l_obj, parser)
+    elif lang == "make":
+        return MakeQueries(code_buf, tree, l_obj, parser)
+    else:
+        raise RuntimeError(UN_SUPP_LANG)
