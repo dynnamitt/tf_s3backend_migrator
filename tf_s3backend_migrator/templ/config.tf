@@ -5,10 +5,6 @@ locals {
   # USEFUL shortcut
   this = local.wrkspc_config[terraform.workspace]
 
-  aws_accounts = {}
-
-  localuser_role_fmt = "arn:aws:iam::%s:role/admin"
-
   # -----------------------------------------------------------------------------------
   # Workspace spesific config here
   # -----------------------------------------------------------------------------------
