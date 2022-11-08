@@ -76,7 +76,12 @@ def main(root_dir: Path, new_backend_tf: Path):
                 temp_file=sb.temp_file, env_part=env_part, **dest_backend_keys
             )
         )
-        aws.upload_to_s3(sb.temp_file, **dest_backend_keys)
+        aws.upload_to_s3(
+            sb.temp_file,
+            role_arn=dest_backend_keys["role_arn"],
+            bucket=dest_backend_keys["bucket"],
+            key=env_part + dest_backend_keys["key"].lstrip("/"),
+        )
         print()
 
         # help the local-user in new file-2-write
@@ -156,16 +161,15 @@ def handle_downloads(code_path: Path, project: pw.LegacyProject) -> List[StateBa
 def render_config_tf(file: Path, data: dict) -> str:
     print(data)
 
-    def nested_dict_2_tf(m:dict,indent:int =4) -> str:
+    def nested_dict_2_tf(m: dict, indent: int = 4) -> str:
         res = ""
         ind_ = " " * indent
-        for w0,v_m in m.items():
-            res = res + f'{ind_}{w0} = {{\n'
-            for k,v in v_m.items():
+        for w0, v_m in m.items():
+            res = res + f"{ind_}{w0} = {{\n"
+            for k, v in v_m.items():
                 res = res + f'{ind_}{ind_}{k} = "{v}"\n'
-            res = res + f'{ind_}}}\n'
+            res = res + f"{ind_}}}\n"
         return res
-
 
     wrkspc_data_txt = nested_dict_2_tf(data)
 
