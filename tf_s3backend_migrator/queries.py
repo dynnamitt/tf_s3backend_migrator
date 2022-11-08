@@ -22,7 +22,7 @@ class TSResult:
     lang: ts_coll.Language
     parser: ts_coll.Parser
 
-    def key_values(self, key_name: str | None = None) -> QResult:
+    def key_values(self, key_name: Optional[str] = None) -> QResult:
         raise NotImplementedError("Use subclass")
 
     def tf_backend_body_kv(self, backend_type: str = "s3") -> QResult:
@@ -49,7 +49,7 @@ class TSResult:
 class HCLQueries(TSResult):
     """Hashicorp HCL queries"""
 
-    def key_values(self, key_name: str | None = None) -> QResult:
+    def key_values(self, key_name: Optional[str] = None) -> QResult:
         only_key_name = f'( #eq? @key "{key_name}" )' if key_name else ""
         scm = f"""
         (
@@ -86,7 +86,7 @@ class HCLQueries(TSResult):
 class MakeQueries(TSResult):
     """Gnu Make(file) queries"""
 
-    def key_values(self, key_name: str | None = None) -> QResult:
+    def key_values(self, key_name: Optional[str] = None) -> QResult:
         scm = """
         (variable_assignment
          name: (word) @key
