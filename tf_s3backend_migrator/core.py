@@ -4,7 +4,6 @@ from . import psudo_workspaces as pw
 from . import queries as q
 from . import aws
 from rich import print
-import json
 from pathlib import Path
 from typing import List, Dict
 import click
@@ -15,7 +14,6 @@ DEF_ARN = "arn:aws:iam::{}:role/admin"
 # make enum ?
 EXPECTED_VALS = {"bucket", "region", "dynamodb_table", "key", "role_arn"}
 
-DEFAULT_WRKSPACE = "test"
 
 CS = ["cyan", "blue", "yellow", "red", "purple", "magenta", "green"]
 
@@ -31,6 +29,16 @@ class StateBackup:
     temp_file: Path
     variable_map: Dict[str, str]
     role_arn: aws.AwsArn
+
+
+def default_workspace(psudo_w_backups: List[StateBackup]) -> str:
+    p_wrkspc_names = [bak.psudo_wrkspc_name for bak in psudo_w_backups]
+    if "test" in p_wrkspc_names:
+        return "test"
+    elif "dev" in p_wrkspc_names:
+        return "dev"
+    else:
+        raise AssertionError("Neither dev/test in result. Strange legacy project this")
 
 
 def main(root_dir: Path, new_backend_tf: Path):
@@ -61,15 +69,16 @@ def main(root_dir: Path, new_backend_tf: Path):
         print(f" - [{CS[idx+1]}]{w}[/{CS[idx+1]}]")
 
     state_backups = handle_downloads(Path(root_dir, pw.TF_CODE_DIR), project)
+    def_p_wrkspace = default_workspace(state_backups)
     config_map = {}
     for sb in state_backups:
         true_wrkspc = (
             "default"
-            if sb.psudo_wrkspc_name == DEFAULT_WRKSPACE
+            if sb.psudo_wrkspc_name == def_p_wrkspace
             else sb.psudo_wrkspc_name.lower()
         )
         env_part = (
-            f"env:/{true_wrkspc}/" if sb.psudo_wrkspc_name != DEFAULT_WRKSPACE else ""
+            f"env:/{true_wrkspc}/" if sb.psudo_wrkspc_name != def_p_wrkspace else ""
         )
         print(
             "<<<< Uploading {temp_file} to s3://{bucket}/{env_part}{key} ....".format(
