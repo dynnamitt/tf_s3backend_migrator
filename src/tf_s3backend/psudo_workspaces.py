@@ -90,5 +90,9 @@ def get_legacy_project(root_dir: Path) -> LegacyProject:
         p.set_workspaces(ws_)
 
     # try?
-    p = [p for p in [GEN1, GEN2] if len(p.workspaces) > 0][0]
-    return p
+    if len(GEN1.workspaces) > 0:
+        return GEN1
+    elif len(GEN2.workspaces) > 0:
+        return GEN2
+    else:
+        raise LookupError("Not a Legacy_project dir")

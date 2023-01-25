@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "tf-s3backend-migrator"
+name = "tf-s3backend"
 version = "0.1.0"
 description = ""
 authors = ["kjetil midtlie <kjetil.midtlie@gmail.com>"]
 readme = "README.md"
-# packages = [{ include = "tf_s3backend_migrator" }]
+packages = [{include = "tf_s3backend",from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -13,6 +13,9 @@ ts-language-collection = {git = "https://github.com/dynnamitt/py-ts-languange-co
 rich = "^12.6.0"
 boto3 = "^1.25.2"
 
+
+[tool.poetry.scripts]
+tf_s3 = "tf_s3backend.cli:cli_group"
 
 [build-system]
 requires = ["poetry-core"]
