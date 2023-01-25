@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from functools import lru_cache
 from . import psudo_workspaces as pw
 from . import queries as q
 from . import aws
@@ -124,12 +123,7 @@ def handle_downloads(code_path: Path, project: pw.LegacyProject) -> List[StateBa
             f"====== Psudo-TF-Workspace: [{CS[idx+1]}]{w.name}[/{CS[idx+1]}] :computer:"
         )
         print()
-        init_result = q.parse_file(w.init_file)
-        init_vals = (
-            init_result.tf_backend_body_kv()
-            if w.init_file.name == pw.MK_FILE
-            else init_result.key_values()
-        )
+        init_vals = q.init_vals(q.parse_file(w.init_file))
         vars = q.parse_file(w.input_file).key_values()
         # pprint(vars)
         diff1 = EXPECTED_VALS.difference(init_vals.keys())
@@ -138,7 +132,7 @@ def handle_downloads(code_path: Path, project: pw.LegacyProject) -> List[StateBa
                 f"Searching for {diff1} in {code_path.name} (backend block) ... ",
                 end="",
             )
-            more_kvs = scan_dir_backend_kvs(code_path)
+            more_kvs = q.scan_dir_backend_kvs(code_path)
             for k, v in more_kvs.items():
                 if k in diff1:
                     init_vals[k] = v
@@ -188,18 +182,3 @@ def render_config_tf(file: Path, data: dict) -> str:
 
     config_tf = tf_code_templ.replace(C_MAP_TEMPL_PH, wrkspc_data_txt)
     return config_tf
-
-
-@lru_cache()
-def scan_dir_backend_kvs(code_dir: Path) -> q.QResult:
-    tfs = [f for f in code_dir.iterdir() if f.suffix == ".tf"]
-
-    for f in tfs:
-        try:
-            kvs = q.parse_file(f).tf_backend_body_kv()
-            print("|code-parsed|", end="")
-            return kvs
-        except q.TSQueryError:
-            pass
-            # just move on to next file
-    return {}

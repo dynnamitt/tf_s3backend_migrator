@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Dict
 import ts_language_collection as ts_coll
+from functools import lru_cache
 from pathlib import Path
 
 CAP_NODE = 0
@@ -150,3 +151,25 @@ def parse_file(code_file: Path) -> TSResult:
         return MakeQueries(code_buf, tree, l_obj, parser)
     else:
         raise RuntimeError(UN_SUPP_LANG)
+
+
+def init_vals(ts_result: TSResult) -> QResult:
+    if isinstance(ts_result, MakeQueries):
+        return ts_result.tf_backend_body_kv()
+    else:
+        return ts_result.key_values()
+
+
+@lru_cache()
+def scan_dir_backend_kvs(code_dir: Path) -> QResult:
+    tfs = [f for f in code_dir.iterdir() if f.suffix == ".tf"]
+
+    for f in tfs:
+        try:
+            kvs = q.parse_file(f).tf_backend_body_kv()
+            print("|code-parsed|", end="")
+            return kvs
+        except q.TSQueryError:
+            pass
+            # just move on to next file
+    return {}

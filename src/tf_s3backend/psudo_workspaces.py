@@ -3,7 +3,7 @@ from typing import List
 from pathlib import Path
 import glob
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 MK_FILE = "Makefile"
 TF_CODE_DIR = "tf-code"
@@ -72,6 +72,7 @@ def scan_tf_dir(
 class LegacyProject:
     pattern: str
     init_file: str
+    workspaces: List[TFWannabeWorkSpace] = field(default_factory=list)
 
     def set_workspaces(self, ws: List[TFWannabeWorkSpace]):
         self.workspaces = ws
