@@ -166,10 +166,11 @@ def scan_dir_backend_kvs(code_dir: Path) -> QResult:
 
     for f in tfs:
         try:
-            kvs = q.parse_file(f).tf_backend_body_kv()
-            print("|code-parsed|", end="")
+            kvs = parse_file(f).tf_backend_body_kv()
+            # indicate no-cache run:
+            print("|code-dir-parsed|", end="")
             return kvs
-        except q.TSQueryError:
+        except TSQueryError:
             pass
             # just move on to next file
     return {}

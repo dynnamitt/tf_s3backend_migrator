@@ -41,7 +41,8 @@ def migrate(tf_directory: str, new_backend_tf: str):
     nargs=1,
 )
 def show(tf_directory: str):
-    analyze.main(Path(tf_directory))
+    summary = analyze.main(Path(tf_directory))
+    pprint(summary)
 
 
 @cli_group.command()
