@@ -6,6 +6,7 @@ import ts_language_collection as ts
 from . import queries as q
 from . import psudo_workspaces as pw
 from . import core
+from . import analyze
 
 
 def die(s, code=1):
@@ -30,7 +31,17 @@ def cli_group():
     nargs=1,
 )
 def migrate(tf_directory: str, new_backend_tf: str):
-    core.main(Path(tf_directory), Path(new_backend_tf))
+    migrate.main(Path(tf_directory), Path(new_backend_tf))
+
+
+@cli_group.command()
+@click.argument(
+    "tf_directory",
+    type=click.Path(exists=True, resolve_path=True, dir_okay=True, file_okay=False),
+    nargs=1,
+)
+def show(tf_directory: str, new_backend_tf: str):
+    analyze.main(Path(tf_directory))
 
 
 @cli_group.command()
