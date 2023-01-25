@@ -5,7 +5,7 @@ from pprint import pprint
 import ts_language_collection as ts
 from . import queries as q
 from . import psudo_workspaces as pw
-from . import migrate as migr_mod
+from .migrate import main as migrate_main
 from . import analyze
 
 
@@ -31,7 +31,7 @@ def cli_group():
     nargs=1,
 )
 def migrate(tf_directory: str, new_backend_tf: str):
-    migr_mod.main(Path(tf_directory), Path(new_backend_tf))
+    migrate_main(Path(tf_directory), Path(new_backend_tf))
 
 
 @cli_group.command()
