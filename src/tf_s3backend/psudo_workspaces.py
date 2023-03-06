@@ -6,17 +6,16 @@ import re
 from dataclasses import dataclass, field
 
 MK_FILE = "Makefile"
-TF_CODE_DIR = "tf-code"
 WILDCARD = "%"
 NON_SLASH_GRP_MATCH = "([^/]*)"
 
 
-def render_possible_placeholders(init_vals: dict, wrkspace_name) -> dict:
+def render_possible_placeholders(init_vals: dict, wrkspace_name,tf_code_dir) -> dict:
     """Very custom logic for custom edge-case, nevermind this mess"""
 
     ph_ = lambda id: "$(" + id + ")"
     data = {
-        "SRC": TF_CODE_DIR,
+        "SRC": tf_code_dir,
         "s_account_n": wrkspace_name,
         "ENV": wrkspace_name,
         "s_proj_suffix": ("__dev" if wrkspace_name == "dev" else ""),
@@ -84,10 +83,10 @@ GEN1 = LegacyProject("%/input.tfvars", "init.tfvars")
 GEN2 = LegacyProject("input-%.tfvars", MK_FILE)
 
 
-def get_legacy_project(root_dir: Path) -> LegacyProject:
+def get_legacy_project(root_dir: Path,tf_code_dir:str) -> LegacyProject:
 
     for p in [GEN1, GEN2]:
-        ws_ = scan_tf_dir(root_dir, p.pattern, excludes=[TF_CODE_DIR])
+        ws_ = scan_tf_dir(root_dir, p.pattern, excludes=[tf_code_dir])
         p.set_workspaces(ws_)
 
     # try?

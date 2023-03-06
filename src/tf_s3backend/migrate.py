@@ -32,15 +32,15 @@ class StateBackup:
 
 def default_workspace(psudo_w_backups: List[StateBackup]) -> str:
     p_wrkspc_names = [bak.psudo_wrkspc_name for bak in psudo_w_backups]
-    if "test" in p_wrkspc_names:
-        return "test"
-    elif "dev" in p_wrkspc_names:
-        return "dev"
+
+    intersect = {"dev","test","master.test"}.intersection(p_wrkspc_names)
+    if intersect:
+        return list(intersect)[0]
     else:
         raise AssertionError("Neither dev/test in result. Strange legacy project this")
 
 
-def main(root_dir: Path, new_backend_tf: Path):
+def main(root_dir: Path, new_backend_tf: Path,tf_code_dir:str):
     """Select the type and handle it"""
 
     try:
@@ -57,7 +57,7 @@ def main(root_dir: Path, new_backend_tf: Path):
     if not click.confirm("Continue ?"):
         return
 
-    project = pw.get_legacy_project(root_dir)
+    project = pw.get_legacy_project(root_dir,tf_code_dir)
 
     print(f"\n:bulb: Project_dir is of type '{project.pattern}'\n")
     print(f"Psudo-workspaces located:")
@@ -67,7 +67,7 @@ def main(root_dir: Path, new_backend_tf: Path):
     for idx, w in enumerate(ws_names):
         print(f" - [{CS[idx+1]}]{w}[/{CS[idx+1]}]")
 
-    state_backups = handle_downloads(Path(root_dir, pw.TF_CODE_DIR), project)
+    state_backups = handle_downloads(Path(root_dir, tf_code_dir), project)
     def_p_wrkspace = default_workspace(state_backups)
     config_map = {}
     for sb in state_backups:
@@ -149,7 +149,8 @@ def handle_downloads(code_path: Path, project: pw.LegacyProject) -> List[StateBa
             txt = f"CRITICAL: Code parse of '{code_path.name}' still renders missing vals: {diff2} !"
             raise AssertionError(txt)
 
-        init_vals = pw.render_possible_placeholders(init_vals, w.name)
+        print(code_path.stem)
+        init_vals = pw.render_possible_placeholders(init_vals, w.name, code_path.stem)
         print(">>>> Downloading source: s3://{bucket}/{key} ...".format(**init_vals))
         temp_file = aws.download_s3_obj(**init_vals)
         backups.append(

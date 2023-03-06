@@ -30,8 +30,14 @@ def cli_group():
     type=click.Path(exists=True, resolve_path=True, dir_okay=False, file_okay=True),
     nargs=1,
 )
-def migrate(tf_directory: str, new_backend_tf: str):
-    migrate_main(Path(tf_directory), Path(new_backend_tf))
+@click.option(
+    "--tf_code_dir",
+    type=str,
+    nargs=1,
+    default="tf-code"
+)
+def migrate(tf_directory: str, new_backend_tf: str, tf_code_dir:str):
+    migrate_main(Path(tf_directory), Path(new_backend_tf), tf_code_dir)
 
 
 @cli_group.command()
