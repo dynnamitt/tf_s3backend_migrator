@@ -58,7 +58,7 @@ class HCLQueries(TSResult):
                 (expression 
                     [
                      (literal_value)
-
+                     (collection_value)   
                     ] @val ))
             {only_key_name}
 
