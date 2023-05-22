@@ -55,8 +55,13 @@ class HCLQueries(TSResult):
         scm = f"""
         (
             (attribute (identifier) @key
-            (expression (expr_term (template_expr (quoted_template) @val) )))
+                (expression 
+                    [
+                     (literal_value)
+
+                    ] @val ))
             {only_key_name}
+
         )
         """
         return self.wrap_kvs(scm)
