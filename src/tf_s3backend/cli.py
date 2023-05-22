@@ -42,12 +42,13 @@ def migrate(tf_directory: str, new_backend_tf: str, tf_code_dir:str):
 
 @cli_group.command()
 @click.argument(
-    "tf_directory",
+    "tf_code_dir",
     type=click.Path(exists=True, resolve_path=True, dir_okay=True, file_okay=False),
     nargs=1,
 )
-def show(tf_directory: str):
-    summary = analyze.main(Path(tf_directory))
+def show(tf_code_dir: str):
+    code_dir = Path(tf_code_dir)
+    summary = analyze.main(code_dir)
     pprint(summary)
 
 

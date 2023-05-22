@@ -18,7 +18,8 @@ def main(tf_dir: Path) -> Optional[TFProjectSummary]:
     ADMIN_ROLE_FALLBACK = "bfadmin"
     summary = TFProjectSummary()
     try:
-        legacy_p = pw.get_legacy_project(tf_dir)
+        root_dir = tf_dir.parent
+        legacy_p = pw.get_legacy_project(root_dir, str(tf_dir))
         summary.type = legacy_p.pattern
 
         for w in legacy_p.workspaces:
