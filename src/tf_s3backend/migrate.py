@@ -6,6 +6,7 @@ from rich import print
 from pathlib import Path
 from typing import List, Dict
 import click
+from . import algo
 
 
 DEF_ARN = "arn:aws:iam::{}:role/admin"
@@ -19,6 +20,7 @@ CS = ["cyan", "blue", "yellow", "red", "purple", "magenta", "green"]
 CONF_FILE = "config.tf"
 C_TEMPL_FILE = Path(__file__).parent / "templ/config.tf"
 C_MAP_TEMPL_PH = "###wrkspc_config###"
+C_CONSTS_TEMPL_PH = "###constants###"
 C_ACC_MAP_TEMPL_PH = "###accounts###"
 
 
@@ -163,23 +165,42 @@ def handle_downloads(code_path: Path, project: pw.LegacyProject) -> List[StateBa
 
 
 def render_config_tf(file: Path, data: dict) -> str:
-    print(data)
+    """Logic for making a config.tf file
+    Now ALSO with a global-scope,
+    cherry-picking common vals from .data dict"""
+
+    #print(data)
+    dups_free_data,common = algo.extract_dups(data)
+
+    def dict_2_tf(m:dict, indent) -> str:
+        ind_ = " " * indent
+        res = ""
+        for k, v in m.items():
+            res = res + f'{ind_}{k} = "{v}"\n'
+        return res
 
     def nested_dict_2_tf(m: dict, indent: int = 4) -> str:
         res = ""
         ind_ = " " * indent
         for w0, v_m in m.items():
             res = res + f"{ind_}{w0} = {{\n"
-            for k, v in v_m.items():
-                res = res + f'{ind_}{ind_}{k} = "{v}"\n'
+            res = res + dict_2_tf(v_m,indent*2)
+            # for k, v in v_m.items():
+                # res = res + f'{ind_}{ind_}{k} = "{v}"\n'
             res = res + f"{ind_}}}\n"
         return res
 
-    wrkspc_data_txt = nested_dict_2_tf(data)
+    wrkspc_data_txt = nested_dict_2_tf(dups_free_data)
 
     with open(file, "r") as f:
         tf_code_templ = f.read()
     print(file.name)
 
     config_tf = tf_code_templ.replace(C_MAP_TEMPL_PH, wrkspc_data_txt)
+    
+    if len(common.keys())>0:
+        # 2nd pass
+        common_txt = dict_2_tf(common)
+        config_tf = config_tf.replace(C_CONSTS_TEMPL_PH, common_txt)
+
     return config_tf
