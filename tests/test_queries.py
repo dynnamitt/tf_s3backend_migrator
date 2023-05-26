@@ -26,6 +26,11 @@ class TestQueries(unittest.TestCase):
     def test_hcl_backend(self):
         hcl_backend = Path(HERE, "fixture/gen1/tf-code/state.tf")
         tsr = sut.parse_file(hcl_backend)
-        tsr.tf_backend_body_kv()
-        
-        assert 2 == 1
+        b_kv = tsr.tf_backend_body_kv()
+        print(f"{b_kv=}") 
+
+    def test_make_backend(self):
+        m_backend = Path(HERE, "fixture/gen2b/Makefile")
+        tsr = sut.parse_file(m_backend)
+        b_kv = tsr.tf_backend_body_kv()
+        print(f"{b_kv=}") 

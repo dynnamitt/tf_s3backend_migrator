@@ -71,8 +71,8 @@ class HCLQueries(TSResult):
         (block (identifier) @block 
             (body (block 
                    (identifier) @sub_block 
-                   (string_literal 
-                    (quoted_template) @sub_name)
+                   (string_lit 
+                    (template_literal) @sub_name)
                         (#eq? @block "terraform")
                         (#eq? @sub_block "backend")
                         (#match? @sub_name "{backend_type}")
