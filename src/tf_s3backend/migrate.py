@@ -172,7 +172,7 @@ def render_config_tf(file: Path, data: dict) -> str:
     #print(data)
     dups_free_data,common = algo.extract_dups(data)
 
-    def dict_2_tf(m:dict, indent) -> str:
+    def dict_2_tf(m:dict, indent:int = 4) -> str:
         ind_ = " " * indent
         res = ""
         for k, v in m.items():
@@ -184,7 +184,7 @@ def render_config_tf(file: Path, data: dict) -> str:
         ind_ = " " * indent
         for w0, v_m in m.items():
             res = res + f"{ind_}{w0} = {{\n"
-            res = res + dict_2_tf(v_m,indent*2)
+            res = res + dict_2_tf(v_m, indent*2)
             # for k, v in v_m.items():
                 # res = res + f'{ind_}{ind_}{k} = "{v}"\n'
             res = res + f"{ind_}}}\n"
@@ -200,7 +200,7 @@ def render_config_tf(file: Path, data: dict) -> str:
     
     if len(common.keys())>0:
         # 2nd pass
-        common_txt = dict_2_tf(common)
+        common_txt = dict_2_tf(common,2)
         config_tf = config_tf.replace(C_CONSTS_TEMPL_PH, common_txt)
 
     return config_tf
